@@ -57,7 +57,7 @@ describe('Address Service', function() {
 
     it('should get the address history (null case)', function(done) {
 
-      sandbox.stub(addressService, '_getAddressTxidHistory').callsArgWith(2, null, null);
+      sandbox.stub(addressService, '_getAddressTxSummary').callsArgWith(2, null, null);
       sandbox.stub(addressService, '_getAddressTxHistory').callsArgWith(1, null, []);
 
       addressService.getAddressHistory(['a', 'b', 'c'], { from: 12, to: 14 }, function(err, res) {
@@ -176,21 +176,24 @@ describe('Address Service', function() {
   });
 
   describe('#_getAddressTxidHistory', function() {
+  describe('#_getAddressTxSummary', function() {
     it('should get the address txid history', function(done) {
 
       addressService._mempool = { getTxidsByAddress: sinon.stub().callsArgWith(2, null, []) };
-      var txidStream = new Readable();
-      sandbox.stub(addressService, '_getTxidStream').returns(txidStream);
-      var addressInfoBuf = addressService._encoding.encodeAddressIndexKey('a', 10, tx.txid(), 1, 1, 1234567);
-      var options = {txIdList: []};
+      var txidStream = new Readable({objectMode: true});
+      sandbox.stub(addressService, '_getTxStream').returns(txidStream);
+      var addressInfoBuf = {
+        key: addressService._encoding.encodeAddressIndexKey('a', 10, tx.txid(), 1, 1, 1234567),
+        value: addressService._encoding.encodeAddressIndexValue(213.55)
+      };
 
-      addressService._getAddressTxidHistory('a', options, function(err) {
+      addressService._getAddressTxSummary('a', null, function(err, txList) {
 
         if (err) {
           return done(err);
         }
 
-        expect(options.txIdList).to.deep.equal([{txid: tx.txid(), height: 10}]);
+        expect(txList).to.deep.equal([{txid: tx.txid(), height: 10, input: 1, satoshis: 213.55}]);
         done();
 
       });
@@ -204,12 +207,15 @@ describe('Address Service', function() {
   describe('#AddressSummary', function() {
 
     it('should get the address summary, incoming', function(done) {
+      addressService._block = { getTip: function() { return { height: 150 }; } };
+      const txList = [{
+        txid: '25e28f9fb0ada5353b7d98d85af5524b2f8df5b0b0e2d188f05968bceca603eb',
+        height: 100,
+        satoshis: 500000,
+        input: 0
+      }];
+      sandbox.stub(addressService, '_getAddressTxSummary').callsArgWith(2, null, txList);
 
-      var _tx = tx;
-      _tx.__inputValues = [ 0, 0, 0, 0 ];
-      var results = { items: [_tx] };
-
-      sandbox.stub(addressService, 'getAddressHistory').callsArgWith(2, null, results);
       addressService.getAddressSummary('1JoSiR4dBcSrGs2AZBP2gCHqCCsgzccsGb', {}, function(err, res) {
         if (err) {
           return done(err);

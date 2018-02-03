@@ -55,6 +55,14 @@ describe('Address service encoding', function() {
     addressIndexKey.height.should.equal(height);
   });
 
+  it('should encode address value', function() {
+    encoding.encodeAddressIndexValue(sats).should.deep.equal(satsBuf);
+  })
+
+  it('should decode address value', function() {
+    encoding.decodeAddressIndexValue(satsBuf).should.equal(sats);
+  })
+
   it('should encode utxo key', function() {
     encoding.encodeUtxoIndexKey(address, txid, outputIndex).should.deep.equal(utxoKeyBuf);
   });
