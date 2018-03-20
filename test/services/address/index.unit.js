@@ -76,35 +76,30 @@ describe('Address Service', function() {
     });
 
     it('should get the sorted address history', function(done) {
+      var txIdList = [
+        {
+          txid: "d",
+          height: 10,
+        },
+        {
+          txid: "c",
+          height: 10,
+        },
+        {
+          txid: "a",
+          height: 101,
+        },
+        {
+          txid: "b",
+          height: 100,
+        },
+      ];
 
-      var old_getAddressTxidHistory = addressService._getAddressTxidHistory;
-      addressService._getAddressTxidHistory = function(addr, options, cb) {
-        options.txIdList = [
-          {
-            txid: "d",
-            height: 10,
-          },
-          {
-            txid: "c",
-            height: 10,
-          },
-          {
-            txid: "a",
-            height: 101,
-          },
-          {
-            txid: "b",
-            height: 100,
-          },
-        ];
-        return cb();
-      };
-
-
-      var old_getAddressTxHistory = addressService._getAddressTxHistory;
-      addressService._getAddressTxHistory = function(options, cb) {
-        return cb(null, options.txIdList);
-      };
+      sandbox.stub(addressService, '_getAddressTxSummary').callsArgWith(2, null, txIdList);
+      sandbox.stub(addressService, '_getAddressTxHistory', function(options, cb) {
+        expect(lodash.map(options.txIdList, 'txid')).to.be.deep.equal(['a','b','c','d']);
+        cb(null, options.txIdList);
+      });
 
       addressService.getAddressHistory(['a', 'b', 'c'], { from: 12, to: 14 }, function(err, res) {
 
@@ -114,68 +109,52 @@ describe('Address Service', function() {
 
         expect(res.totalCount).equal(4);
         expect(lodash.map(res.items,'txid')).to.be.deep.equal(['a','b','c','d']);
-
-        addressService._getAddressTxidHistory = old_getAddressTxHistory;
-        addressService._getAddressTxHistory = old_getAddressTxHistory;
         done();
       });
     });
 
     it('should remove duplicated items in history', function(done) {
+      var txIdList = [
+        {
+          txid: "b",
+          height: 10,
+        },
+        {
+          txid: "b",
+          height: 10,
+        },
+        {
+          txid: "d",
+          height: 101,
+        },
+        {
+          txid: "c",
+          height: 100,
+        },
+        {
+          txid: "d",
+          height: 101,
+        }
+      ];
 
-      var old_getAddressTxidHistory = addressService._getAddressTxidHistory;
-      addressService._getAddressTxidHistory = function(addr, options, cb) {
-        options.txIdList = [
-          {
-            txid: "b",
-            height: 10,
-          },
-          {
-            txid: "b",
-            height: 10,
-          },
-          {
-            txid: "d",
-            height: 101,
-          },
-          {
-            txid: "c",
-            height: 100,
-          },
-         {
-            txid: "d",
-            height: 101,
-          },
-        ];
-        return cb();
-      };
-
-
-      var old_getAddressTxHistory = addressService._getAddressTxHistory;
-      addressService._getAddressTxHistory = function(options, cb) {
-        return cb(null, options.txIdList);
-      };
+      sandbox.stub(addressService, '_getAddressTxSummary').callsArgWith(2, null, txIdList);
+      sandbox.stub(addressService, '_getAddressTxHistory', function(options, cb) {
+        expect(lodash.map(options.txIdList, 'txid')).to.be.deep.equal(['d','c','b']);
+        cb(null, options.txIdList);
+      });
 
       addressService.getAddressHistory(['a', 'b', 'c'], { from: 12, to: 14 }, function(err, res) {
-
         if (err) {
           return done(err);
         }
 
         expect(res.totalCount).equal(3);
         expect(lodash.map(res.items,'txid')).to.be.deep.equal(['d','c','b']);
-
-        addressService._getAddressTxidHistory = old_getAddressTxHistory;
-        addressService._getAddressTxHistory = old_getAddressTxHistory;
         done();
       });
     });
-
-
-
   });
 
-  describe('#_getAddressTxidHistory', function() {
   describe('#_getAddressTxSummary', function() {
     it('should get the address txid history', function(done) {
 
