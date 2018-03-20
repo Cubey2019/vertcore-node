@@ -4,7 +4,7 @@ var expect = require('chai').expect;
 var sinon = require('sinon');
 var EventEmitter = require('events').EventEmitter;
 var P2PService = require('../../../lib/services/p2p');
-var Inventory = require('vertcore-p2p').Inventory;
+var Inventory = require('bitcore-p2p').Inventory;
 
 describe('P2P Service', function() {
   var p2p;
